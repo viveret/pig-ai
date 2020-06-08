@@ -25,12 +25,22 @@ void ThreadedAction::wait_for_threads(tiny_dnn::progress_display* prog) {
                 if (last_count > 0) {
                     std::cout << std::endl << std::endl << "Waiting for " << last_count << " items to " << this->silo_label(silo) << " on thread " << (thread + 1) << "/" << tc << "..." << std::endl;
                     prog->restart(last_count);
+                    auto try_count = 0;
                     while (last_count > 0) {
                         auto tmp_count = this->sizeof_silo_thread(silo, thread);
-                        (*prog) += last_count - tmp_count;
-                        last_count = tmp_count;
-                        if (prog->count() > prog->expected_count()) {
-                            prog->restart(prog->count());
+                        if (last_count == tmp_count) {
+                            try_count++;
+                            if (try_count > 100) {
+                                std::cerr << "Thread seems to be stuck on " << tmp_count << " after " << try_count << " attempts" << std::endl;
+                                try_count = 0;
+                            }
+                        } else {
+                            try_count = 0;
+                            (*prog) += last_count - tmp_count;
+                            last_count = tmp_count;
+                            if (prog->count() > prog->expected_count()) {
+                                prog->restart(prog->count());
+                            }
                         }
                         std::this_thread::sleep_for(std::chrono::milliseconds(500));
                     }
