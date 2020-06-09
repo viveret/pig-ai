@@ -36,3 +36,7 @@ bin/*
 # Data
 *.sqlite
 *.csv
+
+
+
+example-data/**

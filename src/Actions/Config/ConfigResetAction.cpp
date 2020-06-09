@@ -4,8 +4,7 @@
 
 #include <iostream>
 
-using namespace ScriptAI;
-using namespace Sql;
+using namespace PigAI;
 
 ConfigResetAction::ConfigResetAction(AIProgram *prog): MenuAction(prog) {
 

@@ -1,5 +1,5 @@
-#ifndef SCRIPTAI_PROGRAM_H
-#define SCRIPTAI_PROGRAM_H
+#ifndef PIGAI_PROGRAM_H
+#define PIGAI_PROGRAM_H
 
 #include <string>
 #include <vector>
@@ -12,17 +12,11 @@
 typedef int SOCKET;
 #endif
 
-#include "TinyPerf.hpp"
 #include "Data/Services/ConfigService.hpp"
 
-namespace ScriptAI {
+namespace PigAI {
     class AIModelAdapter;
     class MenuAction;
-    class AbstractArt;
-    namespace Sql {
-        class LexiconModel;
-        class SpeakerModel;
-    }
 
     class AIProgram {
         private:
@@ -33,20 +27,17 @@ namespace ScriptAI {
 
         bool should_continue;
         std::vector<MenuAction*> actions;
-        std::vector<AbstractArt*> art;
         std::map<std::string, std::string> action_aliases;
-        TinyPerfTracker perf_tracker;
 
         AIModelAdapter* m_model;
-        Sql::LexiconModel* lexicon;
-        Sql::SpeakerModel* speakers;
 
-        inline int speaker_capacity() { return 1500; }
-        size_t lexicon_size();
-        inline int memory_sequence_length() { return 12; }
-        inline int hidden_states_1() { return 2000; }
-        inline int hidden_states_2() { return 250; }
-        inline int hidden_states_3() { return 50; }
+        inline int node_scale() { return 1; }
+
+        inline int input_channels() { return 3; }
+        inline int input_width() { return 32; }
+        inline int hidden_states_1() { return 32; }
+        inline int hidden_states_2() { return 64; }
+        inline int hidden_states_3() { return 64; }
         inline const char* DEFAULT_PORT() { return "9876"; }
 
         const char* label();

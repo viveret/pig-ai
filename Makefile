@@ -1,5 +1,5 @@
 #####  SURVIVOR BUILD SYSTEM VERSION 8/16/14
-#####  Updated 5/12/20 for ScriptAI
+#####  Updated 5/12/20 for PigAI
 
 ### Start by configuring os commands
 
@@ -25,7 +25,7 @@ SE_TARG_OS=ubuntu
 CXX=
 CXX_FLAGS=
 CXX_LIBS=
-CXX_INC=-Ijson/include -Itiny-dnn/
+CXX_INC=-Ijson/include -Itiny-dnn/ -Ipng++/
 CXX_NOTIF=-Wall -Wextra -MMD -MP -Wno-comment -Wno-class-memaccess -Wno-implicit-fallthrough -Wno-unused-variable -Wno-unused-parameter
 
 OUTNAME_EXTENSION_EXE=
@@ -39,7 +39,7 @@ ifeq ($(SE_TARG_OS), win32)
 endif
 ifeq ($(SE_TARG_OS), ubuntu)
 	CXX=g++ -D_UBUNTU
-	CXX_LIBS=-ldl -pthread -lsqlite3
+	CXX_LIBS=-ldl -pthread -lsqlite3 -lpng -ljpeg -lz
 endif
 ifeq ( $(CXX), '' )
 	$(error SE_TARG_OS Not set properly)
@@ -51,7 +51,7 @@ OUTBUILD=obj/
 OUTPATH=bin/
 OUTNAME_GENERIC=
 OUTNAME=
-SE_TARG_NAME=script-ai
+SE_TARG_NAME=pig-ai
 
 ### Calculate build variables
 

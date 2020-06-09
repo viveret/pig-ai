@@ -1,17 +1,18 @@
-#ifndef SCRIPTAI_ThreadedActionSilo_H
-#define SCRIPTAI_ThreadedActionSilo_H
+#ifndef PIGAI_ThreadedActionSilo_H
+#define PIGAI_ThreadedActionSilo_H
 
 #include "../queue.hpp"
 #include <thread>
+#include <vector>
 
-namespace ScriptAI {
+namespace PigAI {
     template <typename TIn, typename TOut>
     class ThreadedActionSilo {
         protected:
         bool& should_continue;
         const size_t *thread_count;
         size_t _next_thread;
-        ThreadedActionSilo<TOut, void*>* _next;
+        std::vector<ThreadedActionSilo<TOut, void*>*> _next;
         concurrent_queue<TIn> *_items;
 
         public:
@@ -25,7 +26,7 @@ namespace ScriptAI {
 
         template <typename TOutNext>
         inline void pipe_to(ThreadedActionSilo<TOut, TOutNext>* next) {
-            this->_next = (ThreadedActionSilo<TOut, void*>*)next;
+            this->_next.push_back((ThreadedActionSilo<TOut, void*>*)next);
         }
 
         inline size_t next_thread() {
@@ -39,8 +40,8 @@ namespace ScriptAI {
         inline int size(size_t thread) { return _items[thread].size(); }
 
         inline void pass_on(const TOut& to_pass_on) {
-            if (this->_next) {
-                this->_next->push(to_pass_on);
+            for (auto it = this->_next.begin(); it != this->_next.end(); it++) {
+                (*it)->push(to_pass_on);
             }
         }
 

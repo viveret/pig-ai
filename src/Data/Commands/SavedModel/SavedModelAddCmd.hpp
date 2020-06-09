@@ -3,9 +3,8 @@
 
 #include "../../Sql/Command.hpp"
 #include "../../Sql/Context.hpp"
-#include "../Model/SentenceModel.hpp"
 
-namespace ScriptAI {
+namespace PigAI {
     namespace Sql {
         class SavedModelAddCmd: public UpdateSqlCommand<std::string> {
             public:

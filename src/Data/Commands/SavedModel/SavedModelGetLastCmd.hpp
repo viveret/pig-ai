@@ -4,9 +4,8 @@
 #include "../../Sql/Command.hpp"
 #include "../../Sql/Context.hpp"
 #include "../Model/PagedPosition.hpp"
-#include "../Model/SentenceModel.hpp"
 
-namespace ScriptAI {
+namespace PigAI {
     namespace Sql {
         class SavedModelGetLastCmd: public SqlCommand<void*, std::string, std::string> {
             public:

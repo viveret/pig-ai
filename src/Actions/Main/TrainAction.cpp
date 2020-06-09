@@ -5,7 +5,7 @@
 
 #include <iostream>
 
-using namespace ScriptAI;
+using namespace PigAI;
 
 TrainAction::TrainAction(AIProgram *prog): MenuAction(prog) {
 

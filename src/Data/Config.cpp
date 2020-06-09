@@ -13,16 +13,17 @@
 
 #include <sqlite3.h>
 
-namespace ScriptAI {
+namespace PigAI {
     namespace Config {
         std::map<std::string, ConfigState*> Cached_By_Handle;
         std::map<int, ConfigState*> Cached_By_Id;
         std::mutex Cache_Mutex;
     }
 }
-using namespace ScriptAI::Config;
+using namespace PigAI;
+using namespace Config;
 
-ConfigState* ScriptAI::Config::Get_State(std::string node) {
+ConfigState* Config::Get_State(std::string node) {
     ConfigState* ret;
     Cache_Mutex.lock();
 
@@ -40,7 +41,7 @@ ConfigState* ScriptAI::Config::Get_State(std::string node) {
     return ret;
 }
 
-ConfigState* ScriptAI::Config::Get_State(size_t id) {
+ConfigState* Config::Get_State(size_t id) {
     ConfigState* ret;
     Cache_Mutex.lock();
 
@@ -60,11 +61,11 @@ ConfigState* ScriptAI::Config::Get_State(size_t id) {
     return ret;
 }
 
-bool ScriptAI::Config::Exists() { return std::ifstream("current.sqlite").good(); }
+bool Config::Exists() { return std::ifstream("current.sqlite").good(); }
 
-void ScriptAI::Config::Init() { SqlContext_Init(); }
+void Config::Init() { SqlContext_Init(); }
 
-void ScriptAI::Config::Cleanup() {
+void Config::Cleanup() {
     Cache_Mutex.lock();
     Cached_By_Handle.clear();
     for (auto it = Cached_By_Id.begin(); it != Cached_By_Id.end(); it++) {

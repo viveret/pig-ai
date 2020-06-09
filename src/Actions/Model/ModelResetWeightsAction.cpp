@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-using namespace ScriptAI;
+using namespace PigAI;
 
 ModelResetWeightsAction::ModelResetWeightsAction(AIProgram *prog): MenuAction(prog) {
 

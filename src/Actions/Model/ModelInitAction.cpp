@@ -4,8 +4,7 @@
 
 #include <iostream>
 
-using namespace ScriptAI;
-using namespace Sql;
+using namespace PigAI;
 
 ModelInitAction::ModelInitAction(AIProgram *prog): MenuAction(prog) {
 
@@ -29,10 +28,6 @@ void ModelInitAction::run() {
 		}
 	}
     
-	if (_prog->lexicon_size() > 0) {
-        _prog->m_model->create_model();
-		std::cout << "Success!" << std::endl;
-	} else {
-		std::cout << "Lexicon empty." << std::endl;
-	}
+	_prog->m_model->create_model();
+	std::cout << "Success!" << std::endl;
 }

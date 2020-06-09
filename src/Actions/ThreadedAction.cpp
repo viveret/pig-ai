@@ -5,7 +5,7 @@
 
 #include <iostream>
 
-using namespace ScriptAI;
+using namespace PigAI;
 
 
 ThreadedAction::ThreadedAction(AIProgram *prog, size_t silo_count):

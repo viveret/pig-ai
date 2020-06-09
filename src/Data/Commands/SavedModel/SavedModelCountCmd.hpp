@@ -4,7 +4,7 @@
 #include "../../Sql/Command.hpp"
 #include "../../Sql/Context.hpp"
 
-namespace ScriptAI {
+namespace PigAI {
     namespace Sql {
         class SavedModelCountCmd: public SqlCommand<void*, size_t, size_t> {
             public:

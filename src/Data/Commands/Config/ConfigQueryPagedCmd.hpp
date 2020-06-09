@@ -6,7 +6,7 @@
 #include "../Model/PagedPosition.hpp"
 #include "../../Config.hpp"
 
-namespace ScriptAI {
+namespace PigAI {
     namespace Sql {
         class ConfigQueryPagedCmd: public SqlCommand<paged_position, Config::ConfigState, std::vector<Config::ConfigState>> {
             public:

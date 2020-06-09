@@ -4,7 +4,7 @@
 #include "../Sql/Command.hpp"
 #include "../Sql/Context.hpp"
 
-namespace ScriptAI {
+namespace PigAI {
     namespace Sql {
         class TableCountCmd: public SqlCommand<std::string, int, int> {
             public:

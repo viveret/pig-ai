@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-using namespace ScriptAI;
+using namespace PigAI;
 
 MenuAction::MenuAction(AIProgram *prog): _prog(prog) {
 

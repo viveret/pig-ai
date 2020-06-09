@@ -5,7 +5,7 @@
 
 #include <iostream>
 
-using namespace ScriptAI;
+using namespace PigAI;
 
 TestAction::TestAction(AIProgram *prog): MenuAction(prog) {
 

@@ -6,7 +6,7 @@
 
 #include <math.h>
 
-using namespace ScriptAI;
+using namespace PigAI;
 using namespace Sql;
 
 ConfigListAction::ConfigListAction(AIProgram *prog): PagedAction(prog, 20) {

@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-using namespace ScriptAI;
+using namespace PigAI;
 
 PagedAction::PagedAction(AIProgram *prog, int page_size): MenuAction(prog), page_size(page_size) {
 }

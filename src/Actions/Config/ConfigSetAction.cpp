@@ -3,8 +3,7 @@
 
 #include <iostream>
 
-using namespace ScriptAI;
-using namespace Sql;
+using namespace PigAI;
 
 ConfigSetAction::ConfigSetAction(AIProgram *prog): MenuAction(prog) {
 

@@ -1,5 +1,5 @@
-#ifndef SCRIPTAI_ACTIONS_H
-#define SCRIPTAI_ACTIONS_H
+#ifndef PIGAI_ACTIONS_H
+#define PIGAI_ACTIONS_H
 
 #include "ThreadedActionSilo.hpp"
 #include "../MenuAction.hpp"
@@ -12,9 +12,11 @@ typedef int SOCKET;
 
 #include <sstream>
 
+#include "../Data/ImageData.hpp"
+
 namespace tiny_dnn { class progress_display; }
 
-namespace ScriptAI {
+namespace PigAI {
     class PagedAction: public MenuAction {
         protected:
         size_t page_size = 10;
@@ -28,39 +30,6 @@ namespace ScriptAI {
         virtual size_t run_paged(size_t start) = 0;
         virtual size_t get_count() = 0;
     };
-
-    // template <typename T>
-    // class ThreadedAction: public MenuAction {
-    //     protected:
-    //     concurrent_queue<std::string> items_to_parse;
-    //     concurrent_queue<PartialSentenceSaveItem> items_to_save;
-    //     size_t source_id, thread_count;
-    //     bool should_continue;
-
-    //     std::thread *thread_parse, *thread_save;
-
-    //     void parse_line(std::string& line);
-    //     void save_line(const PartialSentenceSaveItem& item);
-
-    //     public:
-    //     SentenceImportAction(AIProgram *prog);
-
-    //     void ask_thread_count();
-    //     void set_source(std::string& path);
-    //     void set_source(const char* path);
-
-    //     void add_line(std::string& line);
-
-    //     void thread_parse_run();
-    //     void thread_save_run();
-
-    //     void wait_for_threads(tiny_dnn::progress_display* prog);
-
-    //     public:
-    //     ThreadedAction(AIProgram *prog, int thread_silo_count);
-
-    //     virtual void run() override;
-    // };
     
     class ThreadedAction: public MenuAction {
         public:
@@ -126,152 +95,54 @@ namespace ScriptAI {
         virtual std::string description() override;
         virtual void run() override;
     };
-    
-    class LexiconLoadAction: public MenuAction {
+
+    struct PathAndCategory {
+        std::string path;
+        int category;
+    };
+
+    class SourceImagesAddLoadSilo: public ThreadedActionSilo<PathAndCategory, ImageData> {
         public:
-        LexiconLoadAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual void run() override;
+        SourceImagesAddLoadSilo(bool& should_continue, size_t* thread_count);
+        virtual void process(size_t thread, const PathAndCategory& path) override;
     };
-    
-    class LexiconSaveAction: public MenuAction {
+
+    class SourceImagesAddSaveSilo: public ThreadedActionSilo<ImageData, ImageData> {
         public:
-        LexiconSaveAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual void run() override;
-    };
-    
-    class LexiconBuildAction: public MenuAction {
-        public:
-        LexiconBuildAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual void run() override;
-    };
-    
-    class LexiconClearAction: public MenuAction {
-        public:
-        LexiconClearAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual void run() override;
-    };
-    
-    class LexiconClearLeastFrequentAction: public MenuAction {
-        public:
-        LexiconClearLeastFrequentAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual void run() override;
-    };
-    
-    class LexiconClearMostFrequentAction: public MenuAction {
-        public:
-        LexiconClearMostFrequentAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual void run() override;
-    };
-    
-    class LexiconListAction: public PagedAction {
-        public:
-        LexiconListAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual const char* empty_msg() override;
-        
-        virtual size_t run_paged(size_t start) override;
-        virtual size_t get_count() override;
-    };
-    
-    class LexiconListMostFrequentAction: public PagedAction {
-        public:
-        LexiconListMostFrequentAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual const char* empty_msg() override;
-        
-        virtual size_t run_paged(size_t start) override;
-        virtual size_t get_count() override;
-    };
-    
-    class LexiconListLeastFrequentAction: public PagedAction {
-        public:
-        LexiconListLeastFrequentAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual const char* empty_msg() override;
-        
-        virtual size_t run_paged(size_t start) override;
-        virtual size_t get_count() override;
+        SourceImagesAddSaveSilo(bool& should_continue);
+        virtual void process(size_t thread, const ImageData& img) override;
     };
 
-    class SentenceLoadAction: public MenuAction {
-        public:
-        SentenceLoadAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual void run() override;
-    };
-    
-    struct PartialSentenceSaveItem {
-        std::string speaker;
-        std::string what;
-    };
-
-    class SentenceImportParseSilo;
-    class PartialSentenceImportParser {
-        public:
-        PartialSentenceImportParser();
-
-	    bool is_sentence_done, add_part, assign_to_speaker;
-        std::string speaker;
-        std::stringstream fixed_sentence;
-
-        bool sentence_done(SentenceImportParseSilo *silo, const std::string& line);
-        void process(SentenceImportParseSilo *silo, size_t thread, const std::string& line);
-    };
-
-    class SentenceImportParseSilo: public ThreadedActionSilo<std::string, PartialSentenceSaveItem> {
-        protected:
-        PartialSentenceImportParser *parser;
-
-        public:
-        SentenceImportParseSilo(bool& should_continue, size_t* thread_count);
-        virtual void process(size_t thread, const std::string& line) override;
-        virtual void init() override;
-        virtual void clean() override;
-    };
-
-    class SentenceImportSaveSilo: public ThreadedActionSilo<PartialSentenceSaveItem, void*> {
+    class SourceImagesAddResizeSilo: public ThreadedActionSilo<ImageData, ImageData> {
         private:
-	    size_t& source_id;
+        int input_width, input_channels;
 
         public:
-        SentenceImportSaveSilo(bool& should_continue, size_t& source_id);
-        virtual void process(size_t thread, const PartialSentenceSaveItem& line) override;
+        SourceImagesAddResizeSilo(bool& should_continue, size_t* thread_count);
+        virtual void process(size_t thread, const ImageData& source) override;
+
+        inline void set_input_properties(int width, int channels) {
+            input_width = width;
+            input_channels = channels;
+        }
     };
 
-    class SentenceImportAction: public ThreadedAction {
+    class SourceImagesAddSaveTrainingSilo: public ThreadedActionSilo<ImageData, void*> {
         public:
-        SentenceImportAction(AIProgram *prog);
+        SourceImagesAddSaveTrainingSilo(bool& should_continue);
+        virtual void process(size_t thread, const ImageData& img) override;
+    };
+
+    class SourceImagesAddAction: public ThreadedAction {
+        public:
+        SourceImagesAddAction(AIProgram *prog);
         
-        SentenceImportParseSilo items_to_parse;
-        SentenceImportSaveSilo items_to_save;
-        
-        size_t source_id;
+        SourceImagesAddLoadSilo items_to_load;
+        SourceImagesAddSaveSilo items_to_save;
+        SourceImagesAddResizeSilo items_to_resize;
+        SourceImagesAddSaveTrainingSilo items_to_save_to_train;
+
+        bool try_resolve_category(const std::string& category, int &out_id);
 
         virtual size_t silo_thread_size(size_t silo) override;
         virtual std::thread* create_thread(size_t silo, size_t thread) override;
@@ -279,41 +150,47 @@ namespace ScriptAI {
         virtual const char* silo_label(size_t silo) override;
         virtual void init_silo(size_t silo) override;
         virtual void clean_silo(size_t silo) override;
-
-        void set_source(std::string& path);
-        void set_source(const char* path);
     };
     
-    class SentenceImportFileAction: public SentenceImportAction {
+    class SourceImagesAddFileAction: public SourceImagesAddAction {
         public:
-        SentenceImportFileAction(AIProgram *prog);
+        SourceImagesAddFileAction(AIProgram *prog);
 
         virtual const char* label() override;
         virtual std::string description() override;
         virtual void run() override;
     };
     
-    class SentenceImportInputAction: public SentenceImportAction {
+    class SourceImagesAddFolderAction: public SourceImagesAddAction {
         public:
-        SentenceImportInputAction(AIProgram *prog);
+        SourceImagesAddFolderAction(AIProgram *prog);
 
         virtual const char* label() override;
         virtual std::string description() override;
         virtual void run() override;
     };
     
-    class SentenceClearAction: public MenuAction {
+    class SourceImagesAddInputAction: public SourceImagesAddAction {
         public:
-        SentenceClearAction(AIProgram *prog);
+        SourceImagesAddInputAction(AIProgram *prog);
 
         virtual const char* label() override;
         virtual std::string description() override;
         virtual void run() override;
     };
     
-    class SentenceListAction: public PagedAction {
+    class SourceImagesClearAction: public MenuAction {
         public:
-        SentenceListAction(AIProgram *prog);
+        SourceImagesClearAction(AIProgram *prog);
+
+        virtual const char* label() override;
+        virtual std::string description() override;
+        virtual void run() override;
+    };
+    
+    class SourceImagesListAction: public PagedAction {
+        public:
+        SourceImagesListAction(AIProgram *prog);
 
         virtual const char* label() override;
         virtual std::string description() override;
@@ -323,9 +200,9 @@ namespace ScriptAI {
         virtual size_t get_count() override;
     };
     
-    class SentenceSourceListAction: public PagedAction {
+    class SourceImagesSourceListAction: public PagedAction {
         public:
-        SentenceSourceListAction(AIProgram *prog);
+        SourceImagesSourceListAction(AIProgram *prog);
 
         virtual const char* label() override;
         virtual std::string description() override;
@@ -333,63 +210,6 @@ namespace ScriptAI {
         
         virtual size_t run_paged(size_t start) override;
         virtual size_t get_count() override;
-    };
-    
-    class SpeakerClearAction: public MenuAction {
-        public:
-        SpeakerClearAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual void run() override;
-    };
-    
-    class SpeakerLoadAction: public MenuAction {
-        public:
-        SpeakerLoadAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual void run() override;
-    };
-    
-    class SpeakerSaveAction: public MenuAction {
-        public:
-        SpeakerSaveAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual void run() override;
-    };
-    
-    class SpeakerListAction: public PagedAction {
-        public:
-        SpeakerListAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual const char* empty_msg() override;
-        
-        virtual size_t run_paged(size_t start) override;
-        virtual size_t get_count() override;
-    };
-    
-    class SpeakerImportFileAction: public MenuAction {
-        public:
-        SpeakerImportFileAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual void run() override;
-    };
-    
-    class SpeakerImportInputAction: public MenuAction {
-        public:
-        SpeakerImportInputAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual void run() override;
     };
     
     class QuitAction: public MenuAction {
@@ -401,27 +221,18 @@ namespace ScriptAI {
         virtual void run() override;
     };
     
-    class TrainingDataLoadAction: public MenuAction {
+    class TrainingImagesLoadAction: public MenuAction {
         public:
-        TrainingDataLoadAction(AIProgram *prog);
+        TrainingImagesLoadAction(AIProgram *prog);
 
         virtual const char* label() override;
         virtual std::string description() override;
         virtual void run() override;
     };
     
-    class TrainingDataInfoAction: public MenuAction {
+    class TrainingImagesInfoAction: public MenuAction {
         public:
-        TrainingDataInfoAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual void run() override;
-    };
-    
-    class TrainingDataClearAction: public MenuAction {
-        public:
-        TrainingDataClearAction(AIProgram *prog);
+        TrainingImagesInfoAction(AIProgram *prog);
 
         virtual const char* label() override;
         virtual std::string description() override;
@@ -495,15 +306,6 @@ namespace ScriptAI {
     class ModelResetWeightsAction: public MenuAction {
         public:
         ModelResetWeightsAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual void run() override;
-    };
-
-    class TestRawSentenceImportAction: public MenuAction {
-        public:
-        TestRawSentenceImportAction(AIProgram *prog);
 
         virtual const char* label() override;
         virtual std::string description() override;

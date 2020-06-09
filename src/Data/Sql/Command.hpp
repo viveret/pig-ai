@@ -6,7 +6,7 @@
 #include <cassert>
 #include <string>
 
-namespace ScriptAI {
+namespace PigAI {
     namespace Sql {
         template <class TIn, class TRow, class TOut>
         class SqlCommand {

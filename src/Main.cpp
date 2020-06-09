@@ -8,6 +8,8 @@
 #pragma comment (lib, "Ws2_32.lib")
 #endif
 
+using namespace PigAI;
+
 int main()
 {
 	#ifdef _WIN32
@@ -19,8 +21,8 @@ int main()
 	}
 	#endif
 
-	ScriptAI::Config::Init();
-    ScriptAI::AIProgram p;
+	Config::Init();
+    AIProgram p;
     std::cout << p.label() << "\t-\t" << p.description() << std::endl;
     
     return p.run();

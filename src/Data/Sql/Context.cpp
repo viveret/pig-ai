@@ -17,7 +17,7 @@
 #include <tiny_dnn/config.h>
 #include <tiny_dnn/io/display.h>
 
-using namespace ScriptAI;
+using namespace PigAI;
 using namespace Sql;
 
 auto MIGRATIONS_PATH = "migrations";

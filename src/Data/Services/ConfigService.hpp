@@ -1,9 +1,9 @@
-#ifndef SCRIPTAI_CONFIGSERVICE_H
-#define SCRIPTAI_CONFIGSERVICE_H
+#ifndef PIGAI_CONFIGSERVICE_H
+#define PIGAI_CONFIGSERVICE_H
 
 #include "../Config.hpp"
 
-namespace ScriptAI
+namespace PigAI
 {
     namespace ConfigService
     {
@@ -19,7 +19,7 @@ namespace ScriptAI
         void Delete(Config::ConfigState* status);
     } // namespace ConfigService
     
-} // namespace ScriptAI
+} // namespace PigAI
 
 
 

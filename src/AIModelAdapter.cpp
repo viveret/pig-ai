@@ -1,9 +1,7 @@
 #include "AIModelAdapter.hpp"
 #include "Program.hpp"
-#include "SentenceIterator.hpp"
-#include "Data/Commands/Model/LexiconModel.hpp"
-#include "Data/Commands/Model/SentenceModel.hpp"
-#include "Data/Commands/Model/TrainingDataModel.hpp"
+#include "ImageIterator.hpp"
+#include "Data/Regex.hpp"
 #include "Data/Commands/SavedModel/SavedModelAddCmd.hpp"
 #include "Data/Commands/SavedModel/SavedModelCountCmd.hpp"
 #include "Data/Commands/SavedModel/SavedModelDeleteLastCmd.hpp"
@@ -15,43 +13,22 @@ using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
 using namespace tiny_dnn::core;
 
-using namespace ScriptAI;
+using namespace PigAI;
 using namespace Sql;
 
 #include <sstream>
 #include <fstream>
 #include <cassert>
 
-/**
- * Applies softmax with temperature. The higher the temperature,
- * the uncertain the output.
- * @param data [in] vector of output
- * @param temperature [in] manages output uncertainty.
- */
-void softmax_static(tiny_dnn::vec_t &data, double temperature = 1.0) {
-  tiny_dnn::softmax_layer softmax;
-  for (auto &d : data) {
-    d /= temperature;
-  }
-  softmax.forward_activation(data, data);
-}
-
-struct WordProbability {
-    LexiconFeatureModel* word;
-    double probability;
-};
-
 class TinyDnnAdapter: public AIModelAdapter {
     public:
-    std::vector<std::shared_ptr<tiny_dnn::layer>> layers;
-    tiny_dnn::tensor_t inputs;
-    tiny_dnn::tensor_t outputs;
+    std::vector<tiny_dnn::vec_t> train_inputs;
+    std::vector<tiny_dnn::label_t> train_outputs;
+    std::vector<tiny_dnn::vec_t> test_inputs;
+    std::vector<tiny_dnn::label_t> test_outputs;
     std::shared_ptr<network<sequential>> nn;
     AIProgram* _prog;
-    adagrad opt;
-    lstm_cell_parameters lstm_params;
-
-    std::shared_ptr<recurrent_layer> lstm_1;
+    adam opt;
 
     TinyDnnAdapter(AIProgram* prog): _prog(prog) {
 
@@ -59,7 +36,6 @@ class TinyDnnAdapter: public AIModelAdapter {
 
     virtual void delete_model() override {
         this->nn = nullptr;
-        this->layers.clear();
     }
 
     virtual bool exists() override { return this->nn != nullptr; }
@@ -88,85 +64,38 @@ class TinyDnnAdapter: public AIModelAdapter {
 
         this->nn = std::make_shared<network<sequential>>();
 
-        this->create_model_other();
+        this->create_model_v1();
 
         //nn->weight_init(weight_init::xavier());
-        nn->weight_init(weight_init::lecun());
-        nn->init_weight();
+        //nn->weight_init(weight_init::lecun());
+        //nn->init_weight();
     }
 
-    void create_model_mine() {
+    void create_model_v1() {
+        using conv    = convolutional_layer;
+        using pool    = max_pooling_layer;
         using fc      = fully_connected_layer;
-        using softmax    = tiny_dnn::softmax_layer;
+        using relu    = relu_layer;
+        using softmax = softmax_layer;
 
-        const auto backend_type = tiny_dnn::core::default_engine();
-        lstm_params.has_bias = true;
-        recurrent_layer_parameters recurrent_params;
-        recurrent_params.clip = 0;
-        recurrent_params.bptt_max = 0;
-        recurrent_params.backend_type = backend_type;
+        const int scale = this->_prog->node_scale();
+        const int in_width  = scale * this->_prog->input_width();  ///< width of input image
+        const int n_fmaps  = scale * this->_prog->hidden_states_1();  ///< number of feature maps for upper layer
+        const int n_fmaps2 = scale * this->_prog->hidden_states_2();  ///< number of feature maps for lower layer
+        const int n_fc     = scale * this->_prog->hidden_states_3();  ///< number of hidden units in fully-connected layer
+        const int out_width  = categories().size();  ///< number of output categories
 
-        // Create the model
-        auto in = std::make_shared<fc>(_prog->lexicon_size(), _prog->hidden_states_1(), false, backend_type);
-        //auto tanh_1 = std::make_shared<tanh_layer>(_prog->hidden_states_2());
-        //auto bn_1 = std::make_shared<batch_normalization_layer>(_prog->hidden_states_1(), 1);
-        auto fc_1 = std::make_shared<fc>(_prog->hidden_states_1(), _prog->hidden_states_2(), true, backend_type);
-        //auto bn_2 = std::make_shared<batch_normalization_layer>(_prog->hidden_states_2(), 1);
-        auto fc_2 = std::make_shared<fc>(_prog->hidden_states_2(), _prog->hidden_states_3(), true, backend_type);
-        //auto bn_3 = std::make_shared<batch_normalization_layer>(_prog->hidden_states_2(), 1);
-        lstm_1 = std::make_shared<recurrent_layer>(lstm(_prog->hidden_states_3(), _prog->hidden_states_3(), lstm_params), _prog->memory_sequence_length(), recurrent_params);
-        auto a = std::make_shared<relu_layer>(_prog->hidden_states_3());
-        auto out = std::make_shared<fc>(_prog->hidden_states_3(), _prog->lexicon_size(), true, backend_type);
-
-        layers.emplace_back(in);
-        //layers.emplace_back(tanh_1);
-        // layers.emplace_back(bn_1);
-        layers.emplace_back(fc_1);
-        // layers.emplace_back(bn_2);
-        layers.emplace_back(fc_2);
-        // layers.emplace_back(bn_3);
-        //layers.emplace_back(fc_3);
-        layers.emplace_back(lstm_1);
-        layers.emplace_back(a);
-        layers.emplace_back(out);
-
-        //*nn << in << bn_1 << fc_1 << bn_2 << fc_2 << bn_3 << lstm_1 << a << out;
-        //*nn << in << fc_1 << fc_2 << lstm_1 << a << out;
-        *nn << in << fc_1 << fc_2 << lstm_1 << a << out << softmax();
-    }
-
-    void create_model_other() {
-        std::string rnn_type("lstm");
-        const auto backend_type = tiny_dnn::core::default_engine();
-        const auto dropout_rate = 0.2;
-        using activation = tiny_dnn::selu_layer;
-        using dropout    = tiny_dnn::dropout_layer;
-        using fc         = tiny_dnn::fully_connected_layer;
-        using recurrent  = tiny_dnn::recurrent_layer;
-        using softmax    = tiny_dnn::softmax_layer;
-
-        // clip gradients
-        tiny_dnn::recurrent_layer_parameters params;
-        params.clip = 0;
-
-        // add recurrent stack
-        int input_size = _prog->lexicon_size();
-        *nn << fc(input_size, this->_prog->hidden_states_1(), false, backend_type);
-        input_size = this->_prog->hidden_states_1();
-        for (int i = 0; i < 1; i++) {
-            if (rnn_type == "rnn") {
-                lstm_1 = std::make_shared<recurrent>(tiny_dnn::rnn(input_size, _prog->hidden_states_3()), _prog->memory_sequence_length(), params);
-            } else if (rnn_type == "gru") {
-                lstm_1 = std::make_shared<recurrent>(tiny_dnn::gru(input_size, _prog->hidden_states_3()), _prog->memory_sequence_length(), params);
-            } else if (rnn_type == "lstm") {
-                lstm_1 = std::make_shared<recurrent>(tiny_dnn::lstm(input_size, _prog->hidden_states_3()), _prog->memory_sequence_length(), params);
-            }
-            input_size = _prog->hidden_states_3();
-            *nn << lstm_1 << activation();
-            if (dropout_rate > 0) *nn << dropout(input_size, dropout_rate);
-        }
-        // predict next char
-        *nn << fc(input_size, _prog->lexicon_size(), false, backend_type) << softmax(_prog->lexicon_size());
+        *this->nn << conv(in_width, in_width, 5, 3, n_fmaps, padding::same)          // C1
+                    << pool(in_width, in_width, n_fmaps, 2)                            // P2
+                    << relu(in_width / 2, in_width / 2, n_fmaps)                               // activation
+                    << conv(in_width / 2, in_width / 2, 5, n_fmaps, n_fmaps, padding::same)    // C3
+                    << pool(in_width / 2, in_width / 2, n_fmaps, 2)                            // P4
+                    << relu(in_width / 4, in_width / 4, n_fmaps)                                 // activation
+                    << conv(in_width / 4, in_width / 4, 5, n_fmaps, n_fmaps2, padding::same)     // C5
+                    << pool(in_width / 4, in_width / 4, n_fmaps2, 2)                             // P6
+                    << relu(in_width / 8, in_width / 8, n_fmaps2)                                // activation
+                    << fc(in_width * in_width / 64 * n_fmaps2, n_fc)                          // FC7
+                    << fc(n_fc, out_width) << softmax_layer(out_width);                  // FC Out
     }
 
     virtual void load_model() override {
@@ -184,33 +113,21 @@ class TinyDnnAdapter: public AIModelAdapter {
         this->nn->save(path, content_type::weights);
     }
 
-    /**
-     * calculate loss value (the smaller, the better) for regression task
-     **/
-    template <typename E, class F>
-    float_t get_loss(const tensor_t &in, const tensor_t &t, F on_enumerate_data) {
-        float_t sum_loss = float_t(0);
-
-        for (size_t i = 0; i < in.size(); i++) {
-            const vec_t predicted = this->nn->predict(in[i]);
-            sum_loss += E::f(predicted, t[i]);
-            on_enumerate_data();
-        }
-        return sum_loss;
-    }
-
     virtual void train() override {
-        if (inputs.size() == 0) {
+        if (train_inputs.size() == 0) {
             std::cerr << "inputs is empty" << std::endl;
             return;
-        } else if (outputs.size() == 0) {
+        } else if (train_outputs.size() == 0) {
             std::cerr << "outputs is empty" << std::endl;
+            return;
+        } else if (train_inputs.size() != train_outputs.size()) {
+            std::cerr << "inputs and outputs are different length" << std::endl;
             return;
         }
 
         this->nn->set_netphase(tiny_dnn::net_phase::train);
 
-        std::cout << "Training on a sequence of " << this->inputs.size() << " lexicon pieces" << std::endl;
+        std::cout << "Training on " << this->train_inputs.size() << " images" << std::endl;
 
         size_t batch_size = 0;
         size_t epochs = 0;
@@ -226,44 +143,42 @@ class TinyDnnAdapter: public AIModelAdapter {
             return;
         }
 
-        auto thread_count = (batch_size == epochs && epochs == 1) ? 1 : 8;
-
-        tiny_dnn::progress_display disp(inputs.size());
-        tiny_dnn::timer t;
         double learning_rate;
         std::cout << "learning rate: ";
         std::cin >> learning_rate;
-        this->opt.alpha = learning_rate;
+
+        auto thread_count = (batch_size == epochs && epochs == 1) ? 1 : 8;
+
+        tiny_dnn::progress_display disp(train_inputs.size());
+        tiny_dnn::timer t;
+        this->opt.alpha *= static_cast<tiny_dnn::float_t>(sqrt(batch_size) * learning_rate);
 
         auto on_enumerate_loss = [&]() { ++disp; };
 
         int epoch = 1;
         // create callback
         auto on_enumerate_epoch = [&]() {
-            std::cout << "Epoch " << epoch << "/" << epochs << " finished. "
+            std::cout << std::endl << "Epoch " << epoch << "/" << epochs << " finished. "
                 << t.elapsed() << "s elapsed. Calculating cross entropy loss..." << std::endl;
             ++epoch;
 
-            disp.restart(inputs.size());
             nn->set_netphase(tiny_dnn::net_phase::test);
-            float loss = this->get_loss<cross_entropy>(inputs, outputs, on_enumerate_loss) / inputs.size();
+            auto result = test_inputs.size() > 0 ? this->nn->test(test_inputs, test_outputs) : this->nn->test(train_inputs, train_outputs);
+            result.print_detail(std::cout);
             nn->set_netphase(tiny_dnn::net_phase::train);
 
-            std::cout << "Cross entropy: " << loss << std::endl;
-
             // continue training.
-            disp.restart(inputs.size());
+            disp.restart(train_inputs.size());
             t.restart();
         };
 
         auto on_enumerate_minibatch = [&]() { disp += batch_size; };
 
-        lstm_1->seq_len(_prog->memory_sequence_length());
-        auto ret = nn->fit<cross_entropy, adagrad>(this->opt, inputs, outputs, batch_size, epochs, on_enumerate_minibatch, on_enumerate_epoch, false, thread_count);
-        lstm_1->seq_len(1);
+        auto ret = nn->train<cross_entropy>(this->opt, train_inputs, train_outputs, batch_size, epochs, on_enumerate_minibatch, on_enumerate_epoch, false, thread_count);
 
         if (!ret) {
-            std::cout << "Error while training" << std::endl;
+            std::cerr << "Error while training:";
+            std::cerr << std::endl;
         }
         else {
             std::cout << "Done training" << std::endl;
@@ -272,112 +187,28 @@ class TinyDnnAdapter: public AIModelAdapter {
 
     virtual void test(std::string speaker, std::string seed) override {
         this->nn->set_netphase(tiny_dnn::net_phase::test);
-        lstm_1->seq_len(1);
 
-        std::string last_word, tmp_word;
-        size_t which;
-        vec_t feature_vec(this->_prog->lexicon_size());
-        for (RawSentenceIterator it(speaker + " " + seed); it.good(); it.next()) {
-            if (!this->_prog->lexicon->exists(it.word)) {
-                continue;
-            }
-
-            if (this->_prog->lexicon->try_get_id(it.word, which)) {
-                feature_vec[which] = 1.0;
-                auto output = this->nn->predict(feature_vec);
-                last_word = it.word;
-                feature_vec[which] = 0;
-            }
-        }
-
-        int words = 0, last_word_repeat = 0;
-        while (words++ < 100) {
-            if (!this->_prog->lexicon->try_get_id(last_word, which)) {
-                continue;
-            }
-
-            feature_vec[which] = 1.0;
-
-            auto output = this->nn->predict(feature_vec);
-            std::vector<double> probs = { output.begin(), output.end() };
-            for (auto prob = probs.begin(); prob != probs.end(); prob++) {
-                if (isnanf(*prob)) {
-                    std::cout << "probs has NA" << std::endl;
-                    *prob = __DBL_MIN__;
-                }
-            }
-
-            tmp_word = this->_prog->lexicon->select_one(probs);
-            if (tmp_word == last_word) {
-                last_word_repeat++;
-                if (last_word_repeat > 2) {
-                    std::cout << "Probs: " << std::endl;
-                    WordProbability most_probable_words[15];
-                    for (int i = 0; i < 15; i++) {
-                        most_probable_words[i].word = nullptr;
-                        most_probable_words[i].probability = -1;
-                    }
-
-                    size_t lexicon_id = 0;
-                    for (auto prob = output.begin(); prob != output.end(); prob++, lexicon_id++) {
-                        for (int i = 0; i < 15; i++) {
-                            if (most_probable_words[i].probability < *prob) {
-                                // shift down
-                                for (int j = 14; j > i; j--) {
-                                    most_probable_words[j - 1].probability = most_probable_words[j].probability;
-                                    most_probable_words[j - 1].word = most_probable_words[j].word;
-                                }
-                                // insert
-                                most_probable_words[i].probability = *prob;
-                                most_probable_words[i].word = &this->_prog->lexicon->lexicon[lexicon_id];
-                                break;
-                            }// else if (most_probable_words[i].probability )
-                        }
-                    }
-
-                    for (int i = 0; i < 15; i++) {
-                        if (most_probable_words[i].word == nullptr) {
-                            continue;
-                        }
-                        std::cout << '\t' << most_probable_words[i].word->label.c_str() << "\tfreq: " << most_probable_words[i].probability << std::endl;
-                    }
-                    std::cout << std::endl;
-                    break;
-                }
-            } else {
-                last_word_repeat = 0;
-            }
-            last_word = tmp_word;
-
-            std::cout << last_word << std::endl;
-            if (last_word.length() <= 1 && (last_word[0] == '\n' || last_word[0] == '.' || last_word[0] == '?' || last_word[0] == '!')) {
-                break;
-            } else {
-                std::cout << ' ';
-            }
-            feature_vec[which] = 0;
-        }
     }
 
     virtual void load_data(DAO* dao_in, DAO* dao_out) override {
-        if (!inputs.empty()) {
+        if (!train_inputs.empty()) {
             std::cerr << "input is not empty" << std::endl;
-        } else if (!outputs.empty()) {
+        } else if (!train_outputs.empty()) {
             std::cerr << "output is not empty" << std::endl;
         } else {
-            this->inputs = dao_in->asTensor();
-            this->outputs = dao_out->asTensor();
+            this->train_inputs = dao_in->asVecList();
+            this->train_outputs = dao_out->asLabelList();
         }
     }
 
     virtual bool data_exists() override {
-        return !this->inputs.empty() && !this->outputs.empty();
+        return !this->train_inputs.empty() && !this->train_outputs.empty();
     }
 
     virtual void clear_data() override {
-        this->inputs.clear();
-        this->outputs.clear();
+        this->train_inputs.clear();
+        this->train_outputs.clear();
     }
 };
 
-AIModelAdapter* ScriptAI::Get_TinyDnn_Adapter(AIProgram* prog) { return new TinyDnnAdapter(prog); }
+AIModelAdapter* PigAI::Get_TinyDnn_Adapter(AIProgram* prog) { return new TinyDnnAdapter(prog); }

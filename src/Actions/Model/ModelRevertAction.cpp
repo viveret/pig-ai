@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-using namespace ScriptAI;
+using namespace PigAI;
 
 ModelRevertAction::ModelRevertAction(AIProgram *prog): MenuAction(prog) {
 

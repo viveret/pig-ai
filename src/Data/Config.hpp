@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 
-namespace ScriptAI {
+namespace PigAI {
     namespace Config {
         class ConfigState {
             private:

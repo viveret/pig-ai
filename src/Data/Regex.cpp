@@ -3,30 +3,26 @@
 
 #include <iostream>
 
-namespace ScriptAI {
+namespace PigAI {
     struct RegexInstances {
-        std::regex _rgx_import_sentence;
-        std::vector<std::string> _list_import_word_prefix;
-        std::vector<std::string> _list_import_word_suffix;
-        std::vector<std::string> _list_import_word_nofix;
-        std::regex _rgx_import_word_ignore;
+        std::vector<std::string> _categories;
     };
 
     RegexInstances *rgx_instances = nullptr;
     RegexInstances *ensure_instance();
 }
 
-using namespace ScriptAI;
+using namespace PigAI;
 
-const std::regex& ScriptAI::rgx_import_sentence() { return ensure_instance()->_rgx_import_sentence; }
-const std::vector<std::string> ScriptAI::list_import_word_prefix() { return ensure_instance()->_list_import_word_prefix; }
-const std::vector<std::string> ScriptAI::list_import_word_suffix() { return ensure_instance()->_list_import_word_suffix; }
-const std::vector<std::string> ScriptAI::list_import_word_nofix() { return ensure_instance()->_list_import_word_nofix; }
-const std::regex& ScriptAI::rgx_import_word_ignore() { return ensure_instance()->_rgx_import_word_ignore; }
+// const std::regex& PigAI::rgx_import_sentence() { return ensure_instance()->_rgx_import_sentence; }
+const std::vector<std::string>& PigAI::categories() { return ensure_instance()->_categories; }
+// const std::vector<std::string> PigAI::list_import_word_suffix() { return ensure_instance()->_list_import_word_suffix; }
+// const std::vector<std::string> PigAI::list_import_word_nofix() { return ensure_instance()->_list_import_word_nofix; }
+// const std::regex& PigAI::rgx_import_word_ignore() { return ensure_instance()->_rgx_import_word_ignore; }
 
-std::regex list_rgx("\\|", std::regex::ECMAScript | std::regex::icase);
+std::regex list_rgx(",", std::regex::ECMAScript | std::regex::icase);
 
-std::vector<std::string> ScriptAI::split(std::string str, std::regex rgx) {
+std::vector<std::string> PigAI::split(std::string str, std::regex rgx) {
     std::vector<std::string> ret;
     std::regex_token_iterator<std::string::iterator> end;
 
@@ -37,14 +33,14 @@ std::vector<std::string> ScriptAI::split(std::string str, std::regex rgx) {
     return ret; 
 }
 
-RegexInstances* ScriptAI::ensure_instance() {
+RegexInstances* PigAI::ensure_instance() {
     if (rgx_instances == nullptr) {
         rgx_instances = new RegexInstances {
-            std::regex(Config::Get_State("import_sentence_regex")->asCString(), std::regex::ECMAScript | std::regex::icase),
-            split(Config::Get_State("import_word_prefix_list")->asCString(), list_rgx),
-            split(Config::Get_State("import_word_suffix_list")->asCString(), list_rgx),
-            split(Config::Get_State("import_word_nofix_list")->asCString(), list_rgx),
-            std::regex(Config::Get_State("import_word_ignore_regex")->asCString(), std::regex::ECMAScript | std::regex::icase),
+            // std::regex(Config::Get_State("import_sentence_regex")->asCString(), std::regex::ECMAScript | std::regex::icase),
+            split(Config::Get_State("categories")->asCString(), list_rgx),
+            // split(Config::Get_State("import_word_suffix_list")->asCString(), list_rgx),
+            // split(Config::Get_State("import_word_nofix_list")->asCString(), list_rgx),
+            // std::regex(Config::Get_State("import_word_ignore_regex")->asCString(), std::regex::ECMAScript | std::regex::icase),
         };
     }
     return rgx_instances;

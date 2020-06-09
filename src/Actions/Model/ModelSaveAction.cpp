@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-using namespace ScriptAI;
+using namespace PigAI;
 
 ModelSaveAction::ModelSaveAction(AIProgram *prog): MenuAction(prog) {
 

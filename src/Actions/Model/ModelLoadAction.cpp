@@ -5,8 +5,7 @@
 
 #include <iostream>
 
-using namespace ScriptAI;
-using namespace Sql;
+using namespace PigAI;
 
 ModelLoadAction::ModelLoadAction(AIProgram *prog): MenuAction(prog) {
 

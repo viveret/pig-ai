@@ -5,7 +5,7 @@
 #include "../../Sql/Context.hpp"
 #include "../Model/PagedPosition.hpp"
 
-namespace ScriptAI {
+namespace PigAI {
     namespace Sql {
         class ConfigCountCmd: public SqlCommand<void*, int, int> {
             public:

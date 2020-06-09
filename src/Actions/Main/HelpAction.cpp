@@ -7,7 +7,7 @@
 #include <iostream>
 #include <iomanip>
 
-using namespace ScriptAI;
+using namespace PigAI;
 
 HelpAction::HelpAction(AIProgram *prog): MenuAction(prog) {
 
@@ -29,8 +29,8 @@ void HelpAction::run() {
 		max_len = std::max(max_len, (int) strlen((*it)->label()));
 	}
 
-	max_len += 3;
+	max_len += 1;
 	for (auto it = this->_prog->actions.begin(); it != this->_prog->actions.end(); it++) {
-		std::cout << std::setw(max_len) << (*it)->label() << " - " << (*it)->description() << std::endl;
+		std::cout << std::left << std::setw(max_len) << (*it)->label() << " - " << (*it)->description() << std::endl;
 	}
 }

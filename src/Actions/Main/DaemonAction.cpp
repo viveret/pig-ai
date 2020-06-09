@@ -22,7 +22,7 @@
 #include <tiny_dnn/io/display.h>
 #include <limits.h> 
 
-using namespace ScriptAI;
+using namespace PigAI;
 
 nlohmann::json readJson(SOCKET client) {
 	tiny_dnn::timer t;
@@ -193,7 +193,7 @@ void DaemonAction::incomingRequestNN(SOCKET client) {
 		std::cout << "Client " << addrStr << " connected." << std::endl;
 	}
 
-	tiny_dnn::vec_t input(this->_prog->lexicon_size(), 0.0f);
+	tiny_dnn::vec_t input(this->_prog->input_width() * this->_prog->input_width() * this->_prog->input_channels(), 0.0f);
 	auto requestJson = readJson(client);
 	if (requestJson == nullptr) {
 		return;

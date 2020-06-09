@@ -5,7 +5,7 @@
 
 #include <iostream>
 
-using namespace ScriptAI;
+using namespace PigAI;
 using namespace Sql;
 
 ModelDeleteSavedAction::ModelDeleteSavedAction(AIProgram *prog): MenuAction(prog) {

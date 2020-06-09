@@ -1,9 +1,9 @@
-#ifndef SCRIPTAI_AIMODELADAPTER_H
-#define SCRIPTAI_AIMODELADAPTER_H
+#ifndef PIGAI_AIMODELADAPTER_H
+#define PIGAI_AIMODELADAPTER_H
 
 #include "Data/DAO.hpp"
 
-namespace ScriptAI {
+namespace PigAI {
     class AIModelAdapter {
         public:
 

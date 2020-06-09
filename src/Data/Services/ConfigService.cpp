@@ -5,7 +5,7 @@
 
 #include "../Commands/Config/ConfigQueryPagedCmd.hpp"
 
-namespace ScriptAI {
+namespace PigAI {
     namespace ConfigService {
         class UpdateConfigArgs {
             public:
@@ -137,12 +137,12 @@ namespace ScriptAI {
         };
     }
 }
-using namespace ScriptAI;
+using namespace PigAI;
 using namespace ConfigService;
 using namespace Sql;
 
 // Create and update
-void ScriptAI::ConfigService::Save(Config::ConfigState* status) {
+void PigAI::ConfigService::Save(Config::ConfigState* status) {
     UpdateConfigCmd cmd(SqlContext());
     cmd.execute(status);
 }
@@ -162,7 +162,7 @@ Config::ConfigState* SelectFirst(std::vector<Config::ConfigState*>* results) {
     }
 }
 
-Config::ConfigState* ScriptAI::ConfigService::Get_State(std::string handle) {
+Config::ConfigState* PigAI::ConfigService::Get_State(std::string handle) {
     SelectConfigByHandleCmd cmd(SqlContext());
     auto ret = SelectFirst(cmd.execute(handle.c_str()));
         
@@ -175,17 +175,17 @@ Config::ConfigState* ScriptAI::ConfigService::Get_State(std::string handle) {
     return ret;
 }
 
-Config::ConfigState* ScriptAI::ConfigService::Get_State(size_t id) {
+Config::ConfigState* PigAI::ConfigService::Get_State(size_t id) {
     SelectConfigByIdCmd cmd(SqlContext());
     return SelectFirst(cmd.execute(id));
 }
 
-std::vector<Config::ConfigState> ScriptAI::ConfigService::Get_Paged(size_t start, size_t count) {
+std::vector<Config::ConfigState> PigAI::ConfigService::Get_Paged(size_t start, size_t count) {
     ConfigQueryPagedCmd cmd(SqlContext());
     return cmd.execute(paged_position { start, count });
 }
 
 // Delete
-void ScriptAI::ConfigService::Delete(Config::ConfigState* status) {
+void PigAI::ConfigService::Delete(Config::ConfigState* status) {
     DeleteConfigCmd(SqlContext()).execute(status);
 }

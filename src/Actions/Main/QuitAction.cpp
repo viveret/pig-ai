@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-using namespace ScriptAI;
+using namespace PigAI;
 
 QuitAction::QuitAction(AIProgram *prog): MenuAction(prog) {
 

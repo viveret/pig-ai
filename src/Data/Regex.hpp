@@ -1,17 +1,13 @@
-#ifndef SCRIPTAI_REGEX_H
-#define SCRIPTAI_REGEX_H
+#ifndef PIGAI_REGEX_H
+#define PIGAI_REGEX_H
 
 #include <regex>
 #include <string>
 #include <vector>
 
-namespace ScriptAI {
+namespace PigAI {
     const std::regex& rgx_import_sentence();
-    const std::vector<std::string> list_import_word_prefix();
-    const std::vector<std::string> list_import_word_suffix();
-    const std::vector<std::string> list_import_word_nofix();
-    const std::regex& rgx_import_word_ignore();
-
+    const std::vector<std::string>& categories();
     std::vector<std::string> split(std::string str, std::regex rgx);
 }
 

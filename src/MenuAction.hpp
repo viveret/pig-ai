@@ -1,9 +1,9 @@
-#ifndef SCRIPTAI_MENU_ACTION_H
-#define SCRIPTAI_MENU_ACTION_H
+#ifndef PIGAI_MENU_ACTION_H
+#define PIGAI_MENU_ACTION_H
 
 #include <string>
 
-namespace ScriptAI {
+namespace PigAI {
     class AIProgram;
     class MenuAction {
         protected:
