@@ -1,13 +1,9 @@
 # Pig-AI
-
 PigAI is an AI capable of putting pigs in pens. Specifically, `police`, `nat-guard`, `armed-citizen`, `unarmed-citizen`, and `other`
 
 ## Table of Contents
 - Building
-- Concepts
 - Running
-- Examples
-- Credits
 - Contributing
 
 ## Building
