@@ -28,13 +28,13 @@ AIProgram::AIProgram(): should_continue(true), m_model(nullptr) {
 	this->actions.push_back(new ModelDeleteAction(this));
 	this->actions.push_back(new ModelResetWeightsAction(this));
 
-	this->actions.push_back(new SourceImagesAddFileAction(this));
-	this->actions.push_back(new SourceImagesAddFolderAction(this));
-	this->actions.push_back(new SourceImagesClearAction(this));
-	this->actions.push_back(new SourceImagesListAction(this));
+	this->actions.push_back(new ImagesImportFileAction(this));
+	this->actions.push_back(new ImagesImportFolderAction(this));
+	this->actions.push_back(new ImagesImportCIFAR10Action(this));
+	this->actions.push_back(new ImagesClearAction(this));
+	this->actions.push_back(new ImagesListAction(this));
 
 	this->actions.push_back(new TrainingImagesLoadAction(this));
-	this->actions.push_back(new TrainingImagesInfoAction(this));
 
 	this->actions.push_back(new ConfigSetAction(this));
 	this->actions.push_back(new ConfigDeleteAction(this));

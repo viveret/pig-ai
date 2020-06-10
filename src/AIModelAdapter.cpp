@@ -153,8 +153,6 @@ class TinyDnnAdapter: public AIModelAdapter {
         tiny_dnn::timer t;
         this->opt.alpha *= static_cast<tiny_dnn::float_t>(sqrt(batch_size) * learning_rate);
 
-        auto on_enumerate_loss = [&]() { ++disp; };
-
         int epoch = 1;
         // create callback
         auto on_enumerate_epoch = [&]() {

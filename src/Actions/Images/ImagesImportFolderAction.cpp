@@ -17,19 +17,19 @@
 using namespace PigAI;
 using namespace Sql;
 
-SourceImagesAddFolderAction::SourceImagesAddFolderAction(AIProgram *prog): SourceImagesAddAction(prog) {
+ImagesImportFolderAction::ImagesImportFolderAction(AIProgram *prog): ImagesImportAction(prog) {
 
 }
 
-const char* SourceImagesAddFolderAction::label() {
-	return "source images add folder";
+const char* ImagesImportFolderAction::label() {
+	return "images import folder";
 }
 
-std::string SourceImagesAddFolderAction::description() {
+std::string ImagesImportFolderAction::description() {
 	return "Add source images from a folder to the neural network";
 }
 
-void SourceImagesAddFolderAction::run() {
+void ImagesImportFolderAction::run() {
 	this->ask_thread_count();
 	std::cout << "Add folder: ";
 	std::string import_path;

@@ -9,19 +9,19 @@
 using namespace PigAI;
 using namespace Sql;
 
-SourceImagesClearAction::SourceImagesClearAction(AIProgram *prog): MenuAction(prog) {
+ImagesClearAction::ImagesClearAction(AIProgram *prog): MenuAction(prog) {
 
 }
 
-const char* SourceImagesClearAction::label() {
-	return "source images clear";
+const char* ImagesClearAction::label() {
+	return "images clear";
 }
 
-std::string SourceImagesClearAction::description() {
-	return "Clear source images from neural network";
+std::string ImagesClearAction::description() {
+	return "Clear images from neural network";
 }
 
-void SourceImagesClearAction::run() {
+void ImagesClearAction::run() {
 	SourceImagesClearCmd(SqlContext()).execute(nullptr);
 	std::cout << "Success!" << std::endl;
 }

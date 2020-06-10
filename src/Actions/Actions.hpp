@@ -101,24 +101,24 @@ namespace PigAI {
         int category;
     };
 
-    class SourceImagesAddLoadSilo: public ThreadedActionSilo<PathAndCategory, ImageData> {
+    class ImagesImportLoadSilo: public ThreadedActionSilo<PathAndCategory, ImageData> {
         public:
-        SourceImagesAddLoadSilo(bool& should_continue, size_t* thread_count);
+        ImagesImportLoadSilo(bool& should_continue, size_t* thread_count);
         virtual void process(size_t thread, const PathAndCategory& path) override;
     };
 
-    class SourceImagesAddSaveSilo: public ThreadedActionSilo<ImageData, ImageData> {
+    class ImagesImportSaveSilo: public ThreadedActionSilo<ImageData, ImageData> {
         public:
-        SourceImagesAddSaveSilo(bool& should_continue);
+        ImagesImportSaveSilo(bool& should_continue);
         virtual void process(size_t thread, const ImageData& img) override;
     };
 
-    class SourceImagesAddResizeSilo: public ThreadedActionSilo<ImageData, ImageData> {
+    class ImagesImportResizeSilo: public ThreadedActionSilo<ImageData, ImageData> {
         private:
         int input_width, input_channels;
 
         public:
-        SourceImagesAddResizeSilo(bool& should_continue, size_t* thread_count);
+        ImagesImportResizeSilo(bool& should_continue, size_t* thread_count);
         virtual void process(size_t thread, const ImageData& source) override;
 
         inline void set_input_properties(int width, int channels) {
@@ -127,20 +127,20 @@ namespace PigAI {
         }
     };
 
-    class SourceImagesAddSaveTrainingSilo: public ThreadedActionSilo<ImageData, void*> {
+    class ImagesImportSaveTrainingSilo: public ThreadedActionSilo<ImageData, void*> {
         public:
-        SourceImagesAddSaveTrainingSilo(bool& should_continue);
+        ImagesImportSaveTrainingSilo(bool& should_continue);
         virtual void process(size_t thread, const ImageData& img) override;
     };
 
-    class SourceImagesAddAction: public ThreadedAction {
+    class ImagesImportAction: public ThreadedAction {
         public:
-        SourceImagesAddAction(AIProgram *prog);
+        ImagesImportAction(AIProgram *prog);
         
-        SourceImagesAddLoadSilo items_to_load;
-        SourceImagesAddSaveSilo items_to_save;
-        SourceImagesAddResizeSilo items_to_resize;
-        SourceImagesAddSaveTrainingSilo items_to_save_to_train;
+        ImagesImportLoadSilo items_to_load;
+        ImagesImportSaveSilo items_to_save;
+        ImagesImportResizeSilo items_to_resize;
+        ImagesImportSaveTrainingSilo items_to_save_to_train;
 
         bool try_resolve_category(const std::string& category, int &out_id);
 
@@ -152,45 +152,45 @@ namespace PigAI {
         virtual void clean_silo(size_t silo) override;
     };
     
-    class SourceImagesAddFileAction: public SourceImagesAddAction {
+    class ImagesImportFileAction: public ImagesImportAction {
         public:
-        SourceImagesAddFileAction(AIProgram *prog);
+        ImagesImportFileAction(AIProgram *prog);
 
         virtual const char* label() override;
         virtual std::string description() override;
         virtual void run() override;
     };
     
-    class SourceImagesAddFolderAction: public SourceImagesAddAction {
+    class ImagesImportFolderAction: public ImagesImportAction {
         public:
-        SourceImagesAddFolderAction(AIProgram *prog);
+        ImagesImportFolderAction(AIProgram *prog);
 
         virtual const char* label() override;
         virtual std::string description() override;
         virtual void run() override;
     };
     
-    class SourceImagesAddInputAction: public SourceImagesAddAction {
+    class ImagesImportCIFAR10Action: public MenuAction {
         public:
-        SourceImagesAddInputAction(AIProgram *prog);
+        ImagesImportCIFAR10Action(AIProgram *prog);
 
         virtual const char* label() override;
         virtual std::string description() override;
         virtual void run() override;
     };
     
-    class SourceImagesClearAction: public MenuAction {
+    class ImagesClearAction: public MenuAction {
         public:
-        SourceImagesClearAction(AIProgram *prog);
+        ImagesClearAction(AIProgram *prog);
 
         virtual const char* label() override;
         virtual std::string description() override;
         virtual void run() override;
     };
     
-    class SourceImagesListAction: public PagedAction {
+    class ImagesListAction: public PagedAction {
         public:
-        SourceImagesListAction(AIProgram *prog);
+        ImagesListAction(AIProgram *prog);
 
         virtual const char* label() override;
         virtual std::string description() override;
@@ -200,9 +200,9 @@ namespace PigAI {
         virtual size_t get_count() override;
     };
     
-    class SourceImagesSourceListAction: public PagedAction {
+    class ImagesSourceListAction: public PagedAction {
         public:
-        SourceImagesSourceListAction(AIProgram *prog);
+        ImagesSourceListAction(AIProgram *prog);
 
         virtual const char* label() override;
         virtual std::string description() override;
@@ -224,15 +224,6 @@ namespace PigAI {
     class TrainingImagesLoadAction: public MenuAction {
         public:
         TrainingImagesLoadAction(AIProgram *prog);
-
-        virtual const char* label() override;
-        virtual std::string description() override;
-        virtual void run() override;
-    };
-    
-    class TrainingImagesInfoAction: public MenuAction {
-        public:
-        TrainingImagesInfoAction(AIProgram *prog);
 
         virtual const char* label() override;
         virtual std::string description() override;

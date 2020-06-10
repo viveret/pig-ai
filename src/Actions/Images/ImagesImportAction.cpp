@@ -23,19 +23,19 @@ using namespace PigAI;
 using namespace Sql;
 
 
-SourceImagesAddLoadSilo::SourceImagesAddLoadSilo(bool& should_continue, size_t* thread_count):
+ImagesImportLoadSilo::ImagesImportLoadSilo(bool& should_continue, size_t* thread_count):
 	ThreadedActionSilo(should_continue, thread_count) {}
 
-void SourceImagesAddLoadSilo::process(size_t thread, const PathAndCategory& path) {
+void ImagesImportLoadSilo::process(size_t thread, const PathAndCategory& path) {
 	auto img = Load_Image(path.path);
 	img->category = path.category;
 	this->pass_on(*img);
 }
 
-SourceImagesAddSaveSilo::SourceImagesAddSaveSilo(bool& should_continue):
+ImagesImportSaveSilo::ImagesImportSaveSilo(bool& should_continue):
 	ThreadedActionSilo(should_continue, nullptr) {}
 
-void SourceImagesAddSaveSilo::process(size_t thread, const ImageData& img) {
+void ImagesImportSaveSilo::process(size_t thread, const ImageData& img) {
 	SourceImagesAddCmd(SqlContext()).execute(&img);
 	const ImageData img_saved = {
 		sqlite3_last_insert_rowid(SqlContext()),
@@ -45,12 +45,12 @@ void SourceImagesAddSaveSilo::process(size_t thread, const ImageData& img) {
 	this->pass_on(img_saved);
 }
 
-SourceImagesAddResizeSilo::SourceImagesAddResizeSilo(bool& should_continue, size_t* thread_count):
+ImagesImportResizeSilo::ImagesImportResizeSilo(bool& should_continue, size_t* thread_count):
 	ThreadedActionSilo(should_continue, thread_count) {
 
 }
 
-void SourceImagesAddResizeSilo::process(size_t thread, const ImageData& source) {
+void ImagesImportResizeSilo::process(size_t thread, const ImageData& source) {
 	png::image< png::rgb_pixel > image(source.width, source.height);
 	for (int y = 0; y < source.height; y++) {
 		for (int x = 0; x < source.width; x++) {
@@ -74,15 +74,15 @@ void SourceImagesAddResizeSilo::process(size_t thread, const ImageData& source) 
 	this->pass_on(new_img);
 }
 
-SourceImagesAddSaveTrainingSilo::SourceImagesAddSaveTrainingSilo(bool& should_continue):
+ImagesImportSaveTrainingSilo::ImagesImportSaveTrainingSilo(bool& should_continue):
 	ThreadedActionSilo(should_continue, nullptr) {
 }
 
-void SourceImagesAddSaveTrainingSilo::process(size_t thread, const ImageData& img) {
+void ImagesImportSaveTrainingSilo::process(size_t thread, const ImageData& img) {
 	TrainingImagesAddCmd(SqlContext()).execute(&img);
 }
 
-SourceImagesAddAction::SourceImagesAddAction(AIProgram *prog):
+ImagesImportAction::ImagesImportAction(AIProgram *prog):
 	ThreadedAction(prog, 4),
 	items_to_load(this->should_continue, &this->thread_count),
 	items_to_save(this->should_continue),
@@ -94,15 +94,15 @@ SourceImagesAddAction::SourceImagesAddAction(AIProgram *prog):
 	this->items_to_resize.set_input_properties(_prog->input_width(), _prog->input_channels());
 }
 
-void _thread_load_run(SourceImagesAddAction* thiz, size_t thread) { thiz->items_to_load.run(thread); }
+void _thread_load_run(ImagesImportAction* thiz, size_t thread) { thiz->items_to_load.run(thread); }
 
-void _thread_save_run(SourceImagesAddAction* thiz, size_t thread) { thiz->items_to_save.run(thread); }
+void _thread_save_run(ImagesImportAction* thiz, size_t thread) { thiz->items_to_save.run(thread); }
 
-void _thread_resize_run(SourceImagesAddAction* thiz, size_t thread) { thiz->items_to_resize.run(thread); }
+void _thread_resize_run(ImagesImportAction* thiz, size_t thread) { thiz->items_to_resize.run(thread); }
 
-void _thread_save_train_run(SourceImagesAddAction* thiz, size_t thread) { thiz->items_to_save_to_train.run(thread); }
+void _thread_save_train_run(ImagesImportAction* thiz, size_t thread) { thiz->items_to_save_to_train.run(thread); }
 
-bool SourceImagesAddAction::try_resolve_category(const std::string& category, int &out_id) {
+bool ImagesImportAction::try_resolve_category(const std::string& category, int &out_id) {
 	auto category_id = std::find(categories().begin(), categories().end(), category);
 	if (category_id != categories().cend()) {
 		out_id = std::distance(categories().begin(), category_id);
@@ -112,14 +112,14 @@ bool SourceImagesAddAction::try_resolve_category(const std::string& category, in
 	}
 }
 
-size_t SourceImagesAddAction::silo_thread_size(size_t silo) {
+size_t ImagesImportAction::silo_thread_size(size_t silo) {
 	switch (silo) {
 		case 1: case 3: return 1;
 		default: return this->thread_count;
 	}
 }
 
-std::thread* SourceImagesAddAction::create_thread(size_t silo, size_t thread) {
+std::thread* ImagesImportAction::create_thread(size_t silo, size_t thread) {
 	switch (silo) {
 		 case 0:
 		 return new std::thread(_thread_load_run, this, thread);
@@ -133,7 +133,7 @@ std::thread* SourceImagesAddAction::create_thread(size_t silo, size_t thread) {
 	return nullptr;
 }
 
-size_t SourceImagesAddAction::sizeof_silo_thread(size_t silo, size_t thread) {
+size_t ImagesImportAction::sizeof_silo_thread(size_t silo, size_t thread) {
 	switch (silo) {
 		case 0:
 		return this->items_to_load.size(thread);
@@ -147,7 +147,7 @@ size_t SourceImagesAddAction::sizeof_silo_thread(size_t silo, size_t thread) {
 	return 0;
 }
 
-const char* SourceImagesAddAction::silo_label(size_t silo) {
+const char* ImagesImportAction::silo_label(size_t silo) {
 	switch (silo) {
 		case 0:
 		return "load";
@@ -161,7 +161,7 @@ const char* SourceImagesAddAction::silo_label(size_t silo) {
 	return "";
 }
 
-void SourceImagesAddAction::init_silo(size_t silo) {
+void ImagesImportAction::init_silo(size_t silo) {
 	switch (silo) {
 		case 0: this->items_to_load.init(); break;
 		case 1: this->items_to_save.init(); break;
@@ -170,7 +170,7 @@ void SourceImagesAddAction::init_silo(size_t silo) {
 	}
 }
 
-void SourceImagesAddAction::clean_silo(size_t silo) {
+void ImagesImportAction::clean_silo(size_t silo) {
 	switch (silo) {
 		case 0: this->items_to_load.clean(); break;
 		case 1: this->items_to_save.clean(); break;

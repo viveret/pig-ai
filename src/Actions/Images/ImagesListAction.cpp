@@ -10,27 +10,27 @@
 using namespace PigAI;
 using namespace Sql;
 
-SourceImagesListAction::SourceImagesListAction(AIProgram *prog): PagedAction(prog, 10) {
+ImagesListAction::ImagesListAction(AIProgram *prog): PagedAction(prog, 10) {
 
 }
 
-const char* SourceImagesListAction::label() {
-	return "source images list";
+const char* ImagesListAction::label() {
+	return "images list";
 }
 
-std::string SourceImagesListAction::description() {
-	return "List the neural network's source images";
+std::string ImagesListAction::description() {
+	return "List the neural network's images";
 }
 
-const char* SourceImagesListAction::empty_msg() {
-	return "Source image list is empty";
+const char* ImagesListAction::empty_msg() {
+	return "Image list is empty";
 }
 
-size_t SourceImagesListAction::get_count() {
+size_t ImagesListAction::get_count() {
 	return SourceImagesCountCmd(SqlContext()).execute(nullptr);
 }
 
-size_t SourceImagesListAction::run_paged(size_t start) {
+size_t ImagesListAction::run_paged(size_t start) {
 	auto items = SourceImagesQueryPagedCmd(SqlContext()).execute(paged_position { start, this->page_size });
 
 	size_t i = 0;
